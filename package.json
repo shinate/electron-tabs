@@ -1,11 +1,11 @@
 {
-  "name": "electron-tabs-plus",
+  "name": "electron-tabs",
   "version": "0.1.0",
   "description": "Simple tabs for Electron applications",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/brrd/electron-tabs"
+    "url": "https://github.com/shinate/electron-tabs"
   },
   "scripts": {
     "demo": "electron ./demo",
