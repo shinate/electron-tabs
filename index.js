@@ -5,28 +5,28 @@ if (!document) {
 }
 
 // Inject styles
-(function () {
-    const styles = `
-        webview {
-            width: 0px;
-            height: 0px;
-        }
-        webview.visible {
-            width: 100%;
-            height: 100%;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-        }
-    `;
-    let styleTag = document.createElement("style");
-    styleTag.innerHTML = styles;
-    document.getElementsByTagName("head")[0].appendChild(styleTag);
-})();
+// (function () {
+//     const styles = `
+//         webview {
+//             width: 0px;
+//             height: 0px;
+//         }
+//         webview.visible {
+//             width: 100%;
+//             height: 100%;
+//             top: 0;
+//             right: 0;
+//             bottom: 0;
+//             left: 0;
+//         }
+//     `;
+//     let styleTag = document.createElement("style");
+//     styleTag.innerHTML = styles;
+//     document.getElementsByTagName("head")[0].appendChild(styleTag);
+// })();
 
 class TabGroup extends EventEmitter {
-    constructor (args = {}) {
+    constructor(args = {}) {
         super();
         let options = this.options = {
             tabContainerSelector: args.tabContainerSelector || ".etabs-tabs",
@@ -49,7 +49,7 @@ class TabGroup extends EventEmitter {
         }
     }
 
-    addTab (args = this.options.newTab) {
+    addTab(args = this.options.newTab) {
         if (typeof args === "function") {
             args = args(this);
         }
@@ -65,7 +65,7 @@ class TabGroup extends EventEmitter {
         return tab;
     }
 
-    getTab (id) {
+    getTab(id) {
         for (let i in this.tabs) {
             if (this.tabs[i].id === id) {
                 return this.tabs[i];
@@ -74,7 +74,7 @@ class TabGroup extends EventEmitter {
         return null;
     }
 
-    getTabByPosition (position) {
+    getTabByPosition(position) {
         let fromRight = position < 0;
         for (let i in this.tabs) {
             if (this.tabs[i].getPosition(fromRight) === position) {
@@ -84,7 +84,7 @@ class TabGroup extends EventEmitter {
         return null;
     }
 
-    getTabByRelPosition (position) {
+    getTabByRelPosition(position) {
         position = this.getActiveTab().getPosition() + position;
         if (position <= 0) {
             return null;
@@ -92,24 +92,24 @@ class TabGroup extends EventEmitter {
         return this.getTabByPosition(position);
     }
 
-    getNextTab () {
+    getNextTab() {
         return this.getTabByRelPosition(1);
     }
 
-    getPreviousTab () {
+    getPreviousTab() {
         return this.getTabByRelPosition(-1);
     }
 
-    getTabs () {
-      return this.tabs;
+    getTabs() {
+        return this.tabs;
     }
 
-    eachTab (fn) {
-      this.tabs.forEach(fn);
-      return this;
+    eachTab(fn) {
+        this.tabs.forEach(fn);
+        return this;
     }
 
-    getActiveTab () {
+    getActiveTab() {
         if (this.tabs.length === 0) return null;
         return this.tabs[0];
     }
@@ -155,7 +155,7 @@ const TabGroupPrivate = {
 };
 
 class Tab extends EventEmitter {
-    constructor (tabGroup, id, args) {
+    constructor(tabGroup, id, args) {
         super();
         this.tabGroup = tabGroup;
         this.id = id;
@@ -164,11 +164,21 @@ class Tab extends EventEmitter {
         this.iconURL = args.iconURL;
         this.icon = args.icon;
         this.closable = args.closable === false ? false : true;
+        this.type = args.type || 'webview';
         this.webviewAttributes = args.webviewAttributes || {};
-        this.webviewAttributes.src = args.src;
         this.tabElements = {};
         TabPrivate.initTab.bind(this)();
-        TabPrivate.initWebview.bind(this)();
+
+        switch (this.type) {
+            case 'webview':
+                args.hasOwnProperty('src') && args.src != null && (this.webviewAttributes.src = args.src);
+                TabPrivate.initWebview.bind(this)();
+                break;
+            default:
+                TabPrivate.initElement.bind(this)();
+                break;
+        }
+
         if (args.visible !== false) {
             this.show();
         }
@@ -177,7 +187,7 @@ class Tab extends EventEmitter {
         }
     }
 
-    setTitle (title) {
+    setTitle(title) {
         if (this.isClosed) return;
         let span = this.tabElements.title;
         span.innerHTML = title;
@@ -186,12 +196,12 @@ class Tab extends EventEmitter {
         return this;
     }
 
-    getTitle () {
+    getTitle() {
         if (this.isClosed) return;
         return this.title;
     }
 
-    setBadge (badge) {
+    setBadge(badge) {
         if (this.isClosed) return;
         let span = this.tabElements.badge;
         this.badge = badge;
@@ -206,12 +216,12 @@ class Tab extends EventEmitter {
         this.emit("badge-changed", badge, this);
     }
 
-    getBadge () {
-      if (this.isClosed) return;
-      return this.badge;
+    getBadge() {
+        if (this.isClosed) return;
+        return this.badge;
     }
 
-    setIcon (iconURL, icon) {
+    setIcon(iconURL, icon) {
         if (this.isClosed) return;
         this.iconURL = iconURL;
         this.icon = icon;
@@ -227,13 +237,13 @@ class Tab extends EventEmitter {
         return this;
     }
 
-    getIcon () {
+    getIcon() {
         if (this.isClosed) return;
         if (this.iconURL) return this.iconURL;
         return this.icon;
     }
 
-    setPosition (newPosition) {
+    setPosition(newPosition) {
         let tabContainer = this.tabGroup.tabContainer;
         let tabs = tabContainer.children;
         let oldPosition = this.getPosition() - 1;
@@ -262,7 +272,7 @@ class Tab extends EventEmitter {
         return this;
     }
 
-    getPosition (fromRight) {
+    getPosition(fromRight) {
         let position = 0;
         let tab = this.tab;
         while ((tab = tab.previousSibling) != null) position++;
@@ -278,7 +288,7 @@ class Tab extends EventEmitter {
         return position;
     }
 
-    activate () {
+    activate() {
         if (this.isClosed) return;
         let activeTab = this.tabGroup.getActiveTab();
         if (activeTab) {
@@ -293,7 +303,7 @@ class Tab extends EventEmitter {
         return this;
     }
 
-    show (flag) {
+    show(flag) {
         if (this.isClosed) return;
         if (flag !== false) {
             this.tab.classList.add("visible");
@@ -305,11 +315,11 @@ class Tab extends EventEmitter {
         return this;
     }
 
-    hide () {
+    hide() {
         return this.show(false);
     }
 
-    flash (flag) {
+    flash(flag) {
         if (this.isClosed) return;
         if (flag !== false) {
             this.tab.classList.add("flash");
@@ -321,11 +331,11 @@ class Tab extends EventEmitter {
         return this;
     }
 
-    unflash () {
+    unflash() {
         return this.flash(false);
     }
 
-    close (force) {
+    close(force) {
         this.emit("closing", this);
         if (this.isClosed || (!this.closable && !force)) return;
         this.isClosed = true;
@@ -404,6 +414,21 @@ const TabPrivate = {
 
         this.webview.addEventListener("did-finish-load", tabWebviewDidFinishLoadHandler.bind(this), false);
 
+        this.webview.classList.add(this.tabGroup.options.viewClass);
+        if (this.webviewAttributes) {
+            let attrs = this.webviewAttributes;
+            for (let key in attrs) {
+                this.webview.setAttribute(key, attrs[key]);
+            }
+        }
+
+        this.tabGroup.viewContainer.appendChild(this.webview);
+    },
+
+    initElement: function () {
+        this.webview = document.createElement(this.type);
+
+        // same context, so no need to dispatch any events
         this.webview.classList.add(this.tabGroup.options.viewClass);
         if (this.webviewAttributes) {
             let attrs = this.webviewAttributes;
